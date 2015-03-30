@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace MoviesPreprocessor
 {
@@ -16,7 +17,7 @@ namespace MoviesPreprocessor
 			if (args.Length == 0)
 			{
 				Console.WriteLine("You must supply the file name.");
-				goto exit;
+				return;
 			}
 
 			try
@@ -25,8 +26,11 @@ namespace MoviesPreprocessor
 				using (var reader = new StreamReader(file))
 				{
 					var movies = new List<MovieEntry>();
+					var actors = new Dictionary<string, int>();
+					int processed = 0;
 					int skippedMovies = 0;
 					string line;
+					Console.Write("Processing Movie Dump");
 					while((line = reader.ReadLine()) != null)
 					{
 						var parts = line.Split('\t');
@@ -54,20 +58,53 @@ namespace MoviesPreprocessor
 						}
 
 						movies.Add(new MovieEntry(id, title, year, cast));
+
+						foreach(var member in cast)
+						{
+							if(!actors.ContainsKey(member))
+							{
+								actors.Add(member, -1);
+							}	
+						}
+
+						if(++processed % 10000 == 0)
+						{
+							Console.Write(".");
+						}
 					}
-				
-					Console.WriteLine("Processed {0} movies.  Skipped {1}.", movies.Count, skippedMovies);
+
+					Console.WriteLine();
+					Console.Write("Processed {0} movies.  Skipped {1}.  Generating actor table", movies.Count, skippedMovies);
+
+					var arrActors = actors.Keys.ToArray();
+					for(int actorId = 0; actorId < arrActors.Length; ++actorId)
+					{
+						actors[arrActors[actorId]] = actorId;
+
+						if(actorId % 10000 == 0)
+						{
+							Console.Write(".");
+						}
+					}
+
+					Console.WriteLine();
+					Console.WriteLine("Generated actor table, {0} entries.", arrActors.Length);
+
+
+					foreach (var entry in movies) 
+					{
+						var edge = new Edge (entry.Id, 255 - (2015 - entry.Year));
+						var nodeIds = new int[entry.Cast.length];
+
+
+					}
+
 				}
 			}
 			catch (FileNotFoundException)
 			{
 				Console.WriteLine("{0} is an invalid file location.", args[0]);
-				goto exit;
 			}
-
-			exit:
-			Console.WriteLine("Press any key to exit.");
-			Console.Read();
 		}
 
 		static bool TryGetCast(string unparsed, out string[] cast)
@@ -114,6 +151,40 @@ namespace MoviesPreprocessor
 		public override string ToString()
 		{
 			return string.Format("{0} [{1}] starring {2}", Title, Year, string.Join(", ", Cast));
+		}
+	}
+
+	class Graph
+	{
+		private readonly HashSet<Edge>[] _nodes;
+
+		public Graph(int graphSize)
+		{
+			_nodes = new HashSet<Edge>[graphSize];
+			for (int i = 0; i < _nodes.Length; ++i) 
+			{
+				_nodes [i] = new HashSet<Edge> ();
+			}
+		}
+
+		bool AddEdge(Edge edge, params int[] nodes)
+		{
+			for (int i = 0; i < nodes.Length; ++i)
+			{
+				_nodes [nodes [i]].Add (edge);
+			}
+		}
+	}
+
+	class Edge
+	{
+		public readonly int MovieId;
+		public readonly byte Weight;
+
+		public Edge(int movieId, byte weight)
+		{
+			MovieId = movieId;
+			Weight = weight;
 		}
 	}
 }
