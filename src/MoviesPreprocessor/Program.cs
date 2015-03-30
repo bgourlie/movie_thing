@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -74,8 +75,9 @@ namespace MoviesPreprocessor
 					}
 
 					Console.WriteLine();
-					Console.Write("Processed {0} movies.  Skipped {1}.  Generating actor table", movies.Count, skippedMovies);
+					Console.Write("Processed {0} movies.  Skipped {1}.", movies.Count, skippedMovies);
 
+					// Create a lookup table so we can determine an actor's id by their name.
 					var arrActors = actors.Keys.ToArray();
 					for(int actorId = 0; actorId < arrActors.Length; ++actorId)
 					{
@@ -88,17 +90,38 @@ namespace MoviesPreprocessor
 					}
 
 					Console.WriteLine();
-					Console.WriteLine("Generated actor table, {0} entries.", arrActors.Length);
+					Console.Write("Generating graph with {0} nodes", arrActors.Length);
 
-
-					foreach (var entry in movies) 
+					var graph = new Graph(arrActors.Length);
+					for (int i = 0; i < movies.Count; i++)
 					{
-						var edge = new Edge (entry.Id, 255 - (2015 - entry.Year));
-						var nodeIds = new int[entry.Cast.length];
+						var entry = movies[i];
 
+						// Stuff all actor id's into an array
+						var actorIds = new int[entry.Cast.Length];
+						for (int j = 0; j < entry.Cast.Length; ++j)
+						{
+							actorIds[j] = actors[entry.Cast[j]];
+						}
 
+						graph.AddEdge(entry.Id, (byte) (255 - (2015 - entry.Year)), actorIds);
+						if (i%10000 == 0)
+						{
+							Console.Write(".");
+						}
 					}
 
+
+				    // get the current process
+					var currentProcess = Process.GetCurrentProcess();
+
+					// get the physical mem usage
+					long totalBytesOfMemoryUsed = currentProcess.WorkingSet64;
+
+					GC.Collect();
+					Console.WriteLine();
+					Console.WriteLine("{0:N}MB in use.  Press any key to exit.", totalBytesOfMemoryUsed / 1000000f);
+					Console.Read();
 				}
 			}
 			catch (FileNotFoundException)
@@ -110,7 +133,8 @@ namespace MoviesPreprocessor
 		static bool TryGetCast(string unparsed, out string[] cast)
 		{
 			cast = unparsed.Split(new [] { ", "}, StringSplitOptions.RemoveEmptyEntries);
-			if (cast.Length == 0)
+			// In order to link two actors to eachother, we need at least two actors cast in a movie!
+			if (cast.Length < 2)
 			{
 				return false;
 			}
@@ -129,62 +153,6 @@ namespace MoviesPreprocessor
 			}
 
 			return true;
-		}
-	}
-
-
-	class MovieEntry
-	{
-		public readonly int Id;
-		public readonly string Title;
-		public readonly string[] Cast;
-		public readonly ushort Year;
-
-		public MovieEntry(int id, string title, ushort year, string[] cast)
-		{
-			Id = id;
-			Title = title;
-			Year = year;
-			Cast = cast;
-		}
-
-		public override string ToString()
-		{
-			return string.Format("{0} [{1}] starring {2}", Title, Year, string.Join(", ", Cast));
-		}
-	}
-
-	class Graph
-	{
-		private readonly HashSet<Edge>[] _nodes;
-
-		public Graph(int graphSize)
-		{
-			_nodes = new HashSet<Edge>[graphSize];
-			for (int i = 0; i < _nodes.Length; ++i) 
-			{
-				_nodes [i] = new HashSet<Edge> ();
-			}
-		}
-
-		bool AddEdge(Edge edge, params int[] nodes)
-		{
-			for (int i = 0; i < nodes.Length; ++i)
-			{
-				_nodes [nodes [i]].Add (edge);
-			}
-		}
-	}
-
-	class Edge
-	{
-		public readonly int MovieId;
-		public readonly byte Weight;
-
-		public Edge(int movieId, byte weight)
-		{
-			MovieId = movieId;
-			Weight = weight;
 		}
 	}
 }
