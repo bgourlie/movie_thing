@@ -1,14 +1,18 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace MoviesPreprocessor
+namespace DataTypes
 {
-	class Graph
+	public class Graph
 	{
 		private readonly Dictionary<int, Edge>[] _nodes;
+		public readonly int NodeCount;
 
-		public Graph(int graphSize)
+		public Graph(int nodeCount)
 		{
-			_nodes = new Dictionary<int, Edge>[graphSize];
+			NodeCount = nodeCount;
+			_nodes = new Dictionary<int, Edge>[nodeCount];
 			for (int i = 0; i < _nodes.Length; ++i) 
 			{
 				_nodes [i] = new Dictionary<int, Edge> ();
@@ -41,6 +45,32 @@ namespace MoviesPreprocessor
 					}
 				}
 			}
+		}
+
+		public static IEnumerable<Tuple<int, Dictionary<int, Edge>>> Prune(Graph graph, int sourceNodeId)
+		{
+			var visited = new HashSet<int>();
+			var queue = new Queue<int>();
+			visited.Add(sourceNodeId);
+			int curNode = sourceNodeId;
+			do
+			{
+				var edges = graph._nodes[curNode];
+				foreach (var key in edges.Keys)
+				{
+					if (visited.Contains(key))
+					{
+						continue;
+					}
+
+					visited.Add(key);
+					queue.Enqueue(key);
+				}
+
+				curNode = queue.Count == 0 ? -1 : queue.Dequeue();
+			} while (curNode > -1);
+
+			return visited.Select((v) => Tuple.Create(v, graph._nodes[v]));
 		}
 	}
 }

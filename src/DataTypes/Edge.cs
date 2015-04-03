@@ -1,6 +1,6 @@
-﻿namespace MoviesPreprocessor
+﻿namespace DataTypes
 {
-	class Edge
+	public class Edge
 	{
 		public readonly int MovieId;
 		public readonly byte Distance;
