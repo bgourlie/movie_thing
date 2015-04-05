@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using DataTypes;
 
 namespace MoviesPreprocessor
@@ -24,18 +25,78 @@ namespace MoviesPreprocessor
 			}
 
 			Tuple<Graph, Dictionary<int, string>> graphData;
+
 			if (!GenerateGraph(args[0], out graphData))
 			{
 				return;
 			}
 
-			GC.Collect();
-			var memoryUsed = GetMemoryUsageInMegaBytes();
+			var graph = graphData.Item1;
+			var actorTable = graphData.Item2;
+
+			using (var fileStream = File.Open("out.bin", FileMode.Create))
+			{
+				graphData.Item1.WriteToStream(graphData.Item2, fileStream);
+			}
+
+			var fileInfo = new FileInfo("out.bin");
+			var longestActorName = actorTable.Max(c => c.Value.Length);
+			var mostEdgesForANode = graph.Nodes.Max(n => n.Values.Count);
 			Console.WriteLine();
-			Console.WriteLine("Generated graph with {0} nodes. {1:N}MB in use. Press any key to continue.", graphData.Item1.NodeCount, memoryUsed);
+			Console.WriteLine("Saved graph with {0} nodes (highest edges for a node is {1}), {2} edges and {3} actors (max actor name length is {4}) to out.bin ({5}MB).", graph.NodeCount, mostEdgesForANode, graph.EdgeCount, actorTable.Count, longestActorName, fileInfo.Length / 1000000f);
+
+			Console.WriteLine("Reading back file (smoke test)");
+			using (var fileStream = File.OpenRead("out.bin"))
+			{
+				var test = GraphDataFromStream(fileStream);
+			}
+			Console.WriteLine("Done.  Press any key to exit.");
 			Console.Read();
 		}
 
+
+		static Tuple<Dictionary<int, string>, Dictionary<Edge, HashSet<int>>> GraphDataFromStream(Stream stream)
+		{
+			using (var reader = new BinaryReader(stream, Encoding.Unicode))
+			{
+				var actors = new Dictionary<int, string>();
+				var edges = new Dictionary<Edge, HashSet<int>>();
+				// first four bytes is the number records in actor table as a signed int32
+				var numRecords = reader.ReadInt32();
+
+				for (int i = 0; i < numRecords; ++i)
+				{
+					// the first byte for each actor record is the length in characters of the name as a signed int32
+					var strLength = reader.ReadInt32();
+
+					// subsequent bytes are length * number of unicode chars
+					var name = reader.ReadChars(strLength);
+					actors.Add(i, new string(name));
+				}
+
+				var edgeCount = reader.ReadInt32();
+				for (int i = 0; i < edgeCount; ++i)
+				{
+					var movieId = reader.ReadInt32();
+					var distance = reader.ReadByte();
+					var edge = new Edge(movieId, distance);
+					if (!edges.ContainsKey(edge))
+					{
+						var numConnectedNodes = reader.ReadInt32();
+						var connectedNodes = new HashSet<int>();
+						for (int j = 0; j < numConnectedNodes; ++j)
+						{
+							connectedNodes.Add(reader.ReadInt32());
+						}
+
+						edges.Add(edge, connectedNodes);
+					}
+				}
+
+				return Tuple.Create(actors, edges);
+			}
+
+		}
 
 		static bool GenerateGraph(string movieDump, out Tuple<Graph, Dictionary<int, string>> graphData)
 		{
@@ -149,7 +210,7 @@ namespace MoviesPreprocessor
 					}
 
 					Console.WriteLine("Creating new pruned graph");
-					var newGraph = new Graph(pruned.Length);
+					var prunedGraph = new Graph(pruned.Length);
 					var newActors = new Dictionary<int, string>();
 
 					for (int i = 0; i < pruned.Length; ++i)
@@ -157,7 +218,7 @@ namespace MoviesPreprocessor
 						newActors.Add(i, actorsById[actorTranslationTableByNewId[i]]);
 						foreach (var kvp in pruned[i].Item2)
 						{
-							newGraph.AddEdge(kvp.Value.MovieId, kvp.Value.Distance, i, actorTranslationTableByOrigId[kvp.Key]);
+							prunedGraph.AddEdge(kvp.Value.MovieId, kvp.Value.Distance, i, actorTranslationTableByOrigId[kvp.Key]);
 						}
 
 						if (i%10000 == 0)
@@ -166,7 +227,7 @@ namespace MoviesPreprocessor
 						}
 					}
 
-					graphData = Tuple.Create(newGraph, newActors);
+					graphData = Tuple.Create(prunedGraph, newActors);
 					return true;
 				}
 			}
