@@ -26,10 +26,9 @@ namespace DataTypes
 			}
 		}
 
-		public void AddEdge(int movieId, byte weight, params int[] nodeIds)
+		public void AddEdge(Edge edge, params int[] nodeIds)
 		{
 
-			var edge = new Edge(movieId, weight);
 			if (!_edges.ContainsKey(edge))
 			{
 				_edges.Add(edge, new HashSet<int>(nodeIds));
@@ -43,29 +42,7 @@ namespace DataTypes
 				}
 			}
 
-			for (int i = 0 ; i < nodeIds.Length; i++){
-				for(int j = 0 ; j < nodeIds.Length; j++){
-					if (i == j)
-					{
-						continue;
-					}
-					// is there already an edge between these two nodes?
-					var sourceNodeId = nodeIds[i];
-					var targetNodeId = nodeIds[j];
-					if (Nodes[sourceNodeId].ContainsKey(targetNodeId))
-					{
-						if (Nodes[sourceNodeId][targetNodeId].Distance > edge.Distance)
-						{
-							// if the new edge has a shorter distance, replace the old one.
-							Nodes[sourceNodeId][targetNodeId] = edge;
-						}
-					}
-					else
-					{
-						Nodes[sourceNodeId].Add(targetNodeId, edge);
-					}
-				}
-			}
+			Nodes.MakeAdjacent(nodeIds, edge);
 		}
 
 		public static IEnumerable<Tuple<int, Dictionary<int, Edge>>> Prune(Graph graph, int sourceNodeId)
