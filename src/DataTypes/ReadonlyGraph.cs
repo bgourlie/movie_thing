@@ -10,13 +10,13 @@ namespace DataTypes
 	{
 		private readonly Dictionary<int, Edge>[] _nodes;
 		private readonly Dictionary<int, string> _actorTable;
+		private readonly int _edgeCount;
 
 		private ReadonlyGraph(Dictionary<int, Edge>[] nodes, Dictionary<int, string> actorTable, int edgeCount)
 		{
 			_nodes = nodes;
 			_actorTable = actorTable;
-			NodeCount = nodes.Length;
-			EdgeCount = edgeCount;
+			_edgeCount = edgeCount;
 		}
 
 		public static ReadonlyGraph NewFromStream(Stream stream)
@@ -72,8 +72,20 @@ namespace DataTypes
 			}
 		}
 
-		public int NodeCount { get; }
+		public int NodeCount 
+		{ 
+			get
+			{ 
+				return _nodes.Length; 
+			}
+		}
 
-		public int EdgeCount { get; }
+		public int EdgeCount 
+		{ 
+			get 
+			{ 
+				return _edgeCount;
+			} 
+		}
 	}
 }

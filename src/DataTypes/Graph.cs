@@ -11,14 +11,15 @@ namespace DataTypes
 		// An array of Dictionaries, where the index is the node id (actor id)
 		// and the dictionary is keyed by the adjacent node id's with the value being
 		// the edge data.
-		public Dictionary<int, Edge>[] Nodes { get; }
-		
+		public readonly Dictionary<int, Edge>[] Nodes;
+		public readonly int _nodeCount;
+			
 		// Keeps track of distinct edge references so we don't keep any duplicates.
 		private readonly Dictionary<Edge, HashSet<int>> _edges = new Dictionary<Edge, HashSet<int>>();
 
 		public Graph(int nodeCount)
 		{
-			NodeCount = nodeCount;
+			_nodeCount = nodeCount;
 			Nodes = new Dictionary<int, Edge>[nodeCount];
 			for (int i = 0; i < Nodes.Length; ++i) 
 			{
@@ -116,8 +117,19 @@ namespace DataTypes
 			}
 		}
 
-		public int NodeCount { get; }
+		public int NodeCount 
+		{ 
+			get
+			{ 
+				return _nodeCount; 
+			}
+		}
 
-		public int EdgeCount => _edges.Count;
+		public int EdgeCount { 
+			get
+			{ 
+				return _edges.Count; 
+			} 
+		} 
 	}
 }
