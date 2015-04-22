@@ -6,7 +6,7 @@ namespace DataTypes
 {
 	public class Heap<T> where T : struct, IComparable<T>
 	{
-		private readonly List<T> _arr = new List<T> ();
+		internal readonly List<T> _arr = new List<T> ();
 		private int _ubound = -1;
 
 		public void Add (T item)
