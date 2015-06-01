@@ -33,6 +33,29 @@ namespace DataTypes
 			_BalanceUp (++_ubound);
 		}
 
+	    public T PeekMin()
+	    {
+	        return _nodes[0];
+	    }
+
+	    public int GetKey(T node)
+	    {
+	        return _keys[_indices[node]];
+	    }
+
+	    public bool TryGetKey(T node, out int key)
+	    {
+	        int tmpKey;
+	        if (!_indices.TryGetValue(node, out tmpKey))
+	        {
+	            key = -1;
+	            return false;
+	        }
+
+	        key = tmpKey;
+	        return true;
+	    }
+
 		public T ExtractMin()
 		{
 			var ret = _nodes[0];
@@ -62,7 +85,7 @@ namespace DataTypes
             _BalanceUp(index);
 	    }
 
-	    public bool Contains(T item)
+	    public bool ContainsNode(T item)
 	    {
 	        return _indices.ContainsKey(item);
 	    }
