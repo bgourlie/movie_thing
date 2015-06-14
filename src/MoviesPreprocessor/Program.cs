@@ -45,13 +45,27 @@ namespace MoviesPreprocessor
 			Console.WriteLine("Saved graph with {0} nodes (highest edges for a node is {1}), {2} edges and {3} actors (max actor name length is {4}) to out.bin ({5}MB).", graph.NodeCount, mostEdgesForANode, graph.EdgeCount, actorTable.Count, longestActorName, fileInfo.Length / 1000000f);
 
 			Console.WriteLine("Creating readonly graph from file (smoke test)");
-			using (var fileStream = File.OpenRead("out.bin"))
+
+		    using (var fileStream = File.OpenRead("out.bin"))
 			{
 				var readonlyGraph = ReadonlyGraph.NewFromStream(fileStream);
 				GC.Collect();
 				var memoryUsage = GetMemoryUsageInMegaBytes();
 				Console.WriteLine("Readonly graph created with {0} nodes and {1} edges.  Memory used by process is {2}. Press any key to exit.", readonlyGraph.NodeCount, readonlyGraph.EdgeCount, memoryUsage);
 			}
+
+            Console.WriteLine("Writing human readable actor table to actors.txt");
+		    using (var fileStream = File.OpenWrite("actors.txt"))
+		    {
+		        using (var streamWriter = new StreamWriter(fileStream))
+		        {
+                    foreach (var actor in actorTable)
+                    {
+                      streamWriter.WriteLine("{0}: {1}", actor.Key.ToString("D8"), actor.Value);
+                    }
+		        }
+		    }
+
 			Console.Read();
 		}
 
