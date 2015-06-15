@@ -3,13 +3,15 @@ using System.Collections.Generic;
 
 namespace DataTypes.Tests
 {
-	[TestFixture]
+    using System.Linq;
+
+    [TestFixture]
 	public class PriorityQueueTests
 	{
 		[Test]
 		public void TestEnqueue ()
 		{
-			var h = new PriorityQueue<string> ();
+			var h = new PriorityQueue<string, int> ();
 			h.Insert ("a", 312);
 			h.Insert ("b", 56);
 			h.Insert ("c", 1);
@@ -26,13 +28,13 @@ namespace DataTypes.Tests
 			h.Insert ("n", 104);
 			h.Insert ("o", 103);
 			h.Insert ("p", 97);
-			CollectionAssert.AreEqual (new List<int> {1, 1, 3, 2, 6, 56, 57, 14, 312, 24, 789, 67, 99, 104, 103, 97}, h._keys);
+			CollectionAssert.AreEqual (new List<int> {1, 1, 3, 2, 6, 56, 57, 14, 312, 24, 789, 67, 99, 104, 103, 97}, h._keys.Select(k => k.Item1));
 		}
 
 		[Test]
 		public void TestExtractMin()
 		{
-			var h = new PriorityQueue<string> ();
+			var h = new PriorityQueue<string, int> ();
 			h.Insert ("j", 10);
 			h.Insert ("i", 9);
 			h.Insert ("h", 8);
@@ -59,7 +61,7 @@ namespace DataTypes.Tests
 		[Test]
 		public void TestDecreaseKey()
 		{
-			var h = new PriorityQueue<string> ();
+			var h = new PriorityQueue<string, int> ();
 			h.Insert ("j", 10);
 			h.Insert ("i", 9);
 			h.Insert ("h", 8);
@@ -70,7 +72,7 @@ namespace DataTypes.Tests
 			h.Insert ("c", 3);
 			h.Insert ("b", 2);
 			h.Insert ("a", 1);
-            h.DecreaseKey("i", 0);
+            h.DecreaseKey("i", 0, 0);
 
 			Assert.AreEqual("i", h.ExtractMin());
 			Assert.AreEqual("a", h.ExtractMin());

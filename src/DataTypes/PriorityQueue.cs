@@ -6,26 +6,26 @@ namespace DataTypes
 	/// <summary>
 	/// A priority queue, implemented as a min heap.
 	/// </summary>
-	public class PriorityQueue<T>
+	public class PriorityQueue<TNodeType, TMetadataType> 
 	{
-		internal readonly List<T> _nodes = new List<T> ();
-	    internal readonly List<int> _keys = new List<int>();
+		internal readonly List<TNodeType> _nodes = new List<TNodeType> ();
+	    internal readonly List<Tuple<int, TMetadataType>> _keys = new List<Tuple<int, TMetadataType>>();
 
         // Using this as a way to look up a node's index.
-	    private readonly Dictionary<T, int> _indices = new Dictionary<T, int>();
+	    private readonly Dictionary<TNodeType, int> _indices = new Dictionary<TNodeType, int>();
 
 		private int _ubound = -1;
 
-		public void Insert (T item, int key)
+		public void Insert (TNodeType item, int key, TMetadataType metadata = default(TMetadataType))
 		{
 		    int addedAt; 
 			if (_ubound == _nodes.Count - 1) {
 				_nodes.Add (item);
-                _keys.Add(key);
+                _keys.Add(Tuple.Create(key, metadata));
 			    addedAt = 0;
 			} else {
 				_nodes [_ubound] = item;
-			    _keys[_ubound] = key;
+			    _keys[_ubound] = Tuple.Create(key, metadata);
 			    addedAt = _ubound;
 			}
 
@@ -33,17 +33,22 @@ namespace DataTypes
 			_BalanceUp (++_ubound);
 		}
 
-	    public T PeekMin()
+	    public TNodeType PeekMin()
 	    {
 	        return _nodes[0];
 	    }
 
-	    public int GetKey(T node)
+	    public int GetKey(TNodeType node)
 	    {
-	        return _keys[_indices[node]];
+	        return _keys[_indices[node]].Item1;
 	    }
 
-	    public bool TryGetKey(T node, out int key)
+	    public TMetadataType GetNodeMetadata(TNodeType node)
+	    {
+	        return _keys[_indices[node]].Item2;
+	    }
+
+	    public bool TryGetKey(TNodeType node, out int key)
 	    {
 	        int tmpKey;
 	        if (!_indices.TryGetValue(node, out tmpKey))
@@ -56,7 +61,7 @@ namespace DataTypes
 	        return true;
 	    }
 
-		public T ExtractMin()
+		public TNodeType ExtractMin()
 		{
 			var ret = _nodes[0];
 			_nodes[0] = _nodes[_ubound];
@@ -66,26 +71,26 @@ namespace DataTypes
 			return ret; 
 		}
 
-	    public void DecreaseKey(T current, int newKey)
+	    public void DecreaseKey(TNodeType node, int newKey, TMetadataType metadata = default(TMetadataType))
 	    {
-	        var index = _indices[current];
+	        var index = _indices[node];
 	        var curKey = _keys[index];
 
-	        if (curKey == newKey)
+	        if (curKey.Item1 == newKey)
 	        {
 	            return;
 	        }
 
-	        if (newKey > curKey)
+	        if (newKey > curKey.Item1)
 	        {
-	            throw new ArgumentException("newKey must have a lower value.");
+	            return;
 	        }
 
-	        _keys[index] = newKey;
+	        _keys[index] = Tuple.Create(newKey, metadata);
             _BalanceUp(index);
 	    }
 
-	    public bool ContainsNode(T item)
+	    public bool ContainsNode(TNodeType item)
 	    {
 	        return _indices.ContainsKey(item);
 	    }
@@ -103,10 +108,10 @@ namespace DataTypes
 			// determine which child node is smaller
 			int indexToSwap = rightChild > _ubound 
 					? leftChild 
-					: _keys[leftChild] < _keys[rightChild] ? leftChild : rightChild;
+					: _keys[leftChild].Item1 < _keys[rightChild].Item1 ? leftChild : rightChild;
 
 			// compare the current node with the smaller of the two child nodes
-			if (_keys[index] > _keys[indexToSwap])
+			if (_keys[index].Item1 > _keys[indexToSwap].Item1)
 			{
 				// if the current node is bigger than the smaller of the two children,
 				// then continue to push that node down by swapping the two nodes				
@@ -122,7 +127,7 @@ namespace DataTypes
 			}
 			int parentIdx = index / 2;
 
-			if (_keys [index] < _keys [parentIdx]) {
+			if (_keys [index].Item1 < _keys [parentIdx].Item1) {
                 _SwapNodes(index, parentIdx);
 				_BalanceUp (parentIdx);
 			}

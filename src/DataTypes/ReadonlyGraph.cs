@@ -10,27 +10,36 @@ namespace DataTypes
 	{
 		private readonly Dictionary<int, Edge>[] _nodes;
 		private readonly Dictionary<int, string> _actorTable;
-		private readonly int _edgeCount;
 
-		private ReadonlyGraph(Dictionary<int, Edge>[] nodes, Dictionary<int, string> actorTable, int edgeCount)
+	    private ReadonlyGraph(Dictionary<int, Edge>[] nodes, Dictionary<int, string> actorTable, int edgeCount)
 		{
 			_nodes = nodes;
 			_actorTable = actorTable;
-			_edgeCount = edgeCount;
+			EdgeCount = edgeCount;
 		}
 
-	    public List<Edge> GetShortestPath(int fromNode, int toNode)
+	    public string GetActorById(int id)
 	    {
-            var edges = new List<Edge>();
+	        if (!_actorTable.ContainsKey(id))
+	        {
+	            return null;
+	        }
+
+	        return _actorTable[id];
+	    }
+
+	    public List<PathInfo> GetShortestPath(int fromNode, int toNode)
+	    {
+            var paths = new Dictionary<int, PathInfo>();
 
             // Assign to every node a tentative distance value: set it to zero
             // for our initial node and to infinity for all other nodes.
-	        var distances = new PriorityQueue<int>();
+	        var distances = new PriorityQueue<int, PathInfo>();
             distances.Insert(fromNode, 0);
 
             // Keep a set of visited nodes.  This set starts with just the 
             // initial node.
-	        var visited = new HashSet<int> {fromNode};
+	        var visited = new HashSet<int>();
 	        var curNode = fromNode;
 
 	        while (visited.Count < _nodes.Length)
@@ -59,11 +68,11 @@ namespace DataTypes
                     {
                         if (!distances.ContainsNode(kvp.Key))
                         {
-                            distances.Insert(kvp.Key, testDistance);
+                            distances.Insert(kvp.Key, testDistance, new PathInfo(curNode, kvp.Value));
                         }
                         else
                         {
-                            distances.DecreaseKey(kvp.Key, testDistance);
+                            distances.DecreaseKey(kvp.Key, testDistance, new PathInfo(curNode, kvp.Value));
                         }
                     }
                 }
@@ -75,15 +84,34 @@ namespace DataTypes
 
                 // If the destination node has been marked visited, the algorithm
                 // has finished.
-                if (visited.Contains(toNode))
+                if (curNode == toNode)
                 {
-                    // TODO: add the nodes involved in the shortest path to the 
-                    // edges list
-                    return edges;
+                    var ret = new List<PathInfo>();
+                    var metadata = distances.GetNodeMetadata(toNode);
+                    ret.Add(metadata);
+                    var nextNode = metadata.ParentNode;
+                    while (nextNode != fromNode)
+                    {
+                        metadata = paths[nextNode];
+                        ret.Add(metadata);
+                        nextNode = metadata.ParentNode;
+                    }
+                    return ret;
                 }
 
                 // Set the unvisited node marked with the smallest tentative 
                 // distance as the next "current node" and go back to step 3.
+	            var metadata2 = distances.GetNodeMetadata(curNode);
+	            if (paths.ContainsKey(curNode))
+	            {
+	                paths[curNode] = metadata2;
+	            }
+	            else
+	            {
+                    paths.Add(curNode, metadata2);
+	            }
+
+	            distances.ExtractMin();
                 curNode = distances.PeekMin();
 	        }
 
@@ -147,6 +175,6 @@ namespace DataTypes
 
 		public int NodeCount => _nodes.Length;
 
-	    public int EdgeCount => _edgeCount;
+	    public int EdgeCount { get; }
 	}
 }
