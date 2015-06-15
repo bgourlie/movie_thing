@@ -43,6 +43,7 @@
     <Compile Include="Graph.cs" />
     <Compile Include="GraphExtensions.cs" />
     <Compile Include="IGraph.cs" />
+    <Compile Include="PathInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReadonlyGraph.cs" />
     <Compile Include="PriorityQueue.cs" />

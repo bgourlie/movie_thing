@@ -68,11 +68,11 @@ namespace DataTypes
                     {
                         if (!distances.ContainsNode(kvp.Key))
                         {
-                            distances.Insert(kvp.Key, testDistance, new PathInfo(curNode, kvp.Value));
+                            distances.Insert(kvp.Key, testDistance, new PathInfo(kvp.Key, curNode, kvp.Value));
                         }
                         else
                         {
-                            distances.DecreaseKey(kvp.Key, testDistance, new PathInfo(curNode, kvp.Value));
+                            distances.DecreaseKey(kvp.Key, testDistance, new PathInfo(kvp.Key, curNode, kvp.Value));
                         }
                     }
                 }

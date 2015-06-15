@@ -7,7 +7,9 @@ using DataTypes;
 
 namespace MoviesPreprocessor
 {
-	class Program
+    using System.Text;
+
+    class Program
 	{
 		private const string PRUNE_ON = "Kevin Bacon";
 		private const int IDX_ID = 0;
@@ -23,7 +25,7 @@ namespace MoviesPreprocessor
 				return;
 			}
 
-			Tuple<Graph, Dictionary<int, string>> graphData;
+			Tuple<Graph, Dictionary<int, string>, List<MovieEntry>> graphData;
 
 			if (!GenerateGraph(args[0], out graphData))
 			{
@@ -38,11 +40,33 @@ namespace MoviesPreprocessor
 				graphData.Item1.WriteToStream(graphData.Item2, fileStream);
 			}
 
+
 			var fileInfo = new FileInfo("out.bin");
 			var longestActorName = actorTable.Max(c => c.Value.Length);
 			var mostEdgesForANode = graph.Nodes.Max(n => n.Values.Count);
 			Console.WriteLine();
 			Console.WriteLine("Saved graph with {0} nodes (highest edges for a node is {1}), {2} edges and {3} actors (max actor name length is {4}) to out.bin ({5}MB).", graph.NodeCount, mostEdgesForANode, graph.EdgeCount, actorTable.Count, longestActorName, fileInfo.Length / 1000000f);
+
+		    using (var fileStream = File.Open("movies.bin", FileMode.Create))
+		    {
+		        var movies = graphData.Item3;
+		        using (var writer = new BinaryWriter(fileStream))
+		        {
+		            writer.Write(BitConverter.GetBytes(movies.Count));
+
+		            foreach (var movie in movies)
+		            {
+		                writer.Write(BitConverter.GetBytes(movie.Id));
+                        var nameBytes = Encoding.Unicode.GetBytes(movie.Title);
+                        writer.Write(BitConverter.GetBytes(movie.Title.Length));
+                        writer.Write(nameBytes);
+		            }
+		        }
+		    }
+
+			fileInfo = new FileInfo("movies.bin");
+			Console.WriteLine();
+			Console.WriteLine("Saved movies table {0}MB.", fileInfo.Length / 1000000f);
 
 			Console.WriteLine("Creating readonly graph from file (smoke test)");
 
@@ -51,7 +75,7 @@ namespace MoviesPreprocessor
 				var readonlyGraph = ReadonlyGraph.NewFromStream(fileStream);
 				GC.Collect();
 				var memoryUsage = GetMemoryUsageInMegaBytes();
-				Console.WriteLine("Readonly graph created with {0} nodes and {1} edges.  Memory used by process is {2}. Press any key to exit.", readonlyGraph.NodeCount, readonlyGraph.EdgeCount, memoryUsage);
+				Console.WriteLine("Readonly graph created with {0} nodes and {1} edges.  Memory used by process is {2}..", readonlyGraph.NodeCount, readonlyGraph.EdgeCount, memoryUsage);
 			}
 
             Console.WriteLine("Writing human readable actor table to actors.txt");
@@ -65,11 +89,11 @@ namespace MoviesPreprocessor
                     }
 		        }
 		    }
-
+		    Console.WriteLine("Press any key to exit");
 			Console.Read();
 		}
 
-		static bool GenerateGraph(string movieDump, out Tuple<Graph, Dictionary<int, string>> graphData)
+		static bool GenerateGraph(string movieDump, out Tuple<Graph, Dictionary<int, string>, List<MovieEntry>> graphData)
 		{
 			try
 			{
@@ -199,7 +223,7 @@ namespace MoviesPreprocessor
 						}
 					}
 
-					graphData = Tuple.Create(prunedGraph, newActors);
+					graphData = Tuple.Create(prunedGraph, newActors, movies);
 					return true;
 				}
 			}
