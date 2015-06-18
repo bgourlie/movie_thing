@@ -103,6 +103,7 @@ namespace MoviesPreprocessor
 					var movies = new List<MovieEntry>();
 					var actorsByName = new Dictionary<string, int>();
 					var actorsById = new Dictionary<int, string>();
+				    var actorsMovies = new Dictionary<string, List<MovieEntry>>();
 					int processed = 0;
 					int skippedMovies = 0;
 					string line;
@@ -133,7 +134,8 @@ namespace MoviesPreprocessor
 							continue;
 						}
 
-						movies.Add(new MovieEntry(id, title, year, cast));
+					    var movieEntry = new MovieEntry(id, title, year, cast);
+						movies.Add(movieEntry);
 
 						foreach(var member in cast)
 						{
@@ -141,6 +143,18 @@ namespace MoviesPreprocessor
 							{
 								actorsByName.Add(member, -1);
 							}	
+
+                            // We index movies by actor, so that we can prune
+                            // movies later on based on whether or not the cast
+                            // is reachable within our graph
+					        if (actorsMovies.ContainsKey(member))
+					        {
+					            actorsMovies[member].Add(movieEntry);
+					        }
+					        else
+					        {
+					            actorsMovies.Add(member, new List<MovieEntry> { movieEntry });
+					        }
 						}
 
 						if(++processed % 10000 == 0)
@@ -206,11 +220,14 @@ namespace MoviesPreprocessor
 
 					Console.WriteLine("Creating new pruned graph");
 					var prunedGraph = new Graph(pruned.Length);
-					var newActors = new Dictionary<int, string>();
+					var newActorsById = new Dictionary<int, string>();
+				    var prunedActors = new HashSet<string>();
 
 					for (int i = 0; i < pruned.Length; ++i)
 					{
-						newActors.Add(i, actorsById[actorTranslationTableByNewId[i]]);
+					    var actorId = actorsById[actorTranslationTableByNewId[i]];
+						newActorsById.Add(i, actorId);
+                        prunedActors.Add(actorId);
 						foreach (var kvp in pruned[i].Item2)
 						{
 							var edge = new Edge(kvp.Value.MovieId, kvp.Value.Distance);
@@ -223,7 +240,16 @@ namespace MoviesPreprocessor
 						}
 					}
 
-					graphData = Tuple.Create(prunedGraph, newActors, movies);
+				    var prunedMovies = new HashSet<MovieEntry>();
+				    foreach (var actor in prunedActors)
+				    {
+				        foreach (var movie in actorsMovies[actor])
+				        {
+                            prunedMovies.Add(movie);
+				        }
+				    }
+
+					graphData = Tuple.Create(prunedGraph, newActorsById, prunedMovies.ToList());
 					return true;
 				}
 			}
