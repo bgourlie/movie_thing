@@ -61,14 +61,21 @@ namespace DataTypes
 	        return true;
 	    }
 
-		public TNodeType ExtractMin()
+		public bool TryExtractMin(out TNodeType node)
 		{
+		    if (_ubound == -1)
+		    {
+		        node = default(TNodeType);
+		        return false;
+		    }
+
 			var ret = _nodes[0];
 			_nodes[0] = _nodes[_ubound];
 		    _keys[0] = _keys[_ubound];
 		    _ubound -= 1;
 			_BalanceDown(0);
-			return ret; 
+			node = ret;
+		    return true;
 		}
 
 	    public void DecreaseKey(TNodeType node, int newKey, TMetadataType metadata = default(TMetadataType))

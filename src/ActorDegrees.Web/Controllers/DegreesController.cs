@@ -2,9 +2,11 @@
 
 namespace ActorDegrees.Web.Controllers
 {
+    using System.Collections.Generic;
     using System.Linq;
     using System.Net;
     using System.Net.Http;
+    using DataTypes;
 
     [RoutePrefix("api/degrees")]
     public class DegreesController : ApiController
@@ -12,12 +14,22 @@ namespace ActorDegrees.Web.Controllers
 
         public HttpResponseMessage Get(int actor1, int actor2)
         {
-            var path = WebApiApplication.Graph.GetShortestPath(actor1, actor2);
-            var transformed = path.Select(
-                p =>
-                    new PathEntry(WebApiApplication.Graph.GetActorById(p.Node), p.Edge.MovieId, WebApiApplication.Movies[p.Edge.MovieId]));
+            List<PathInfo> path; 
+            var pathFound = WebApiApplication.Graph.TryGetShortestPath(actor1, actor2, out path);
 
-            return Request.CreateResponse(HttpStatusCode.OK, transformed);
+            if (pathFound)
+            {
+                var transformed = path.Select(
+                    p =>
+                        new PathEntry(WebApiApplication.Graph.GetActorById(p.Node), p.Edge.MovieId,
+                            WebApiApplication.Movies[p.Edge.MovieId]));
+
+                return Request.CreateResponse(HttpStatusCode.OK, transformed);
+            }
+            else
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.NotFound, "No path found.");
+            }
         }
     }
 

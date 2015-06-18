@@ -28,7 +28,7 @@ namespace DataTypes
 	        return _actorTable[id];
 	    }
 
-	    public List<PathInfo> GetShortestPath(int fromNode, int toNode)
+	    public bool TryGetShortestPath(int fromNode, int toNode, out List<PathInfo> path)
 	    {
             var paths = new Dictionary<int, PathInfo>();
 
@@ -96,7 +96,9 @@ namespace DataTypes
                         ret.Add(metadata);
                         nextNode = metadata.ParentNode;
                     }
-                    return ret;
+
+                    path = ret;
+                    return true;
                 }
 
                 // Set the unvisited node marked with the smallest tentative 
@@ -111,11 +113,17 @@ namespace DataTypes
                     paths.Add(curNode, metadata2);
 	            }
 
-	            distances.ExtractMin();
+	            int tmp;
+	            if (!distances.TryExtractMin(out tmp))
+	            {
+	                path = null;
+	                return false;
+	            }
+
                 curNode = distances.PeekMin();
 	        }
 
-            throw new Exception($"No path from node {fromNode} to {toNode}");
+            throw new Exception("We should never get here.");
 	    }
 
 		public static ReadonlyGraph NewFromStream(Stream stream)

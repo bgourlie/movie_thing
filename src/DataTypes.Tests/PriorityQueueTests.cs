@@ -46,16 +46,27 @@ namespace DataTypes.Tests
 			h.Insert ("b", 2);
 			h.Insert ("a", 1);
 
-			Assert.AreEqual("a", h.ExtractMin());
-			Assert.AreEqual("b", h.ExtractMin());
-			Assert.AreEqual("c", h.ExtractMin());
-			Assert.AreEqual("d", h.ExtractMin());
-			Assert.AreEqual("e", h.ExtractMin());
-			Assert.AreEqual("f", h.ExtractMin());
-			Assert.AreEqual("g", h.ExtractMin());
-			Assert.AreEqual("h", h.ExtractMin());
-			Assert.AreEqual("i", h.ExtractMin());
-			Assert.AreEqual("j", h.ExtractMin());
+		    string val;
+		    h.TryExtractMin(out val);
+			Assert.AreEqual("a", val);
+		    h.TryExtractMin(out val);
+			Assert.AreEqual("b", val);
+		    h.TryExtractMin(out val);
+			Assert.AreEqual("c", val);
+		    h.TryExtractMin(out val);
+			Assert.AreEqual("d", val);
+		    h.TryExtractMin(out val);
+			Assert.AreEqual("e", val);
+		    h.TryExtractMin(out val);
+			Assert.AreEqual("f", val);
+		    h.TryExtractMin(out val);
+			Assert.AreEqual("g", val);
+		    h.TryExtractMin(out val);
+			Assert.AreEqual("h", val);
+		    h.TryExtractMin(out val);
+			Assert.AreEqual("i", val);
+		    h.TryExtractMin(out val);
+			Assert.AreEqual("j", val);
 		}
 
 		[Test]
@@ -74,8 +85,11 @@ namespace DataTypes.Tests
 			h.Insert ("a", 1);
             h.DecreaseKey("i", 0, 0);
 
-			Assert.AreEqual("i", h.ExtractMin());
-			Assert.AreEqual("a", h.ExtractMin());
+		    string val;
+		    h.TryExtractMin(out val);
+			Assert.AreEqual("i", val);
+		    h.TryExtractMin(out val);
+			Assert.AreEqual("a", val);
 		}
 	}
 }
