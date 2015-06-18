@@ -15,7 +15,7 @@ namespace ActorDegrees.Web.Controllers
             var path = WebApiApplication.Graph.GetShortestPath(actor1, actor2);
             var transformed = path.Select(
                 p =>
-                    new PathEntry(WebApiApplication.Graph.GetActorById(p.Node), WebApiApplication.Movies[p.Edge.MovieId]));
+                    new PathEntry(WebApiApplication.Graph.GetActorById(p.Node), p.Edge.MovieId, WebApiApplication.Movies[p.Edge.MovieId]));
 
             return Request.CreateResponse(HttpStatusCode.OK, transformed);
         }
@@ -23,11 +23,13 @@ namespace ActorDegrees.Web.Controllers
 
     public class PathEntry
     {
+        public readonly int MovieId;
         public readonly string ActorName;
         public readonly string MovieName;
 
-        public PathEntry(string actorName, string movieName)
+        public PathEntry(string actorName, int movieId, string movieName)
         {
+            MovieId = movieId;
             ActorName = actorName;
             MovieName = movieName;
         }
